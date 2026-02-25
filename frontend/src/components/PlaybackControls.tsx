@@ -61,7 +61,8 @@ export function PlaybackControls({ accountId, state }: Props) {
           type="range"
           min={0}
           max={100}
-          value={state.volume_percent ?? 50}
+          value={state.volume_percent ?? 0}
+          disabled={state.volume_percent === null}
           onChange={handleVolumeChange}
           title="Volume"
         />

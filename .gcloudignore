@@ -1,0 +1,27 @@
+# This file controls what gcloud uploads with --source .
+# Unlike .gitignore, allowed_emails.txt is NOT excluded here
+# so it gets included in the Cloud Build context.
+
+.git
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+.env
+*.db
+TODO
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Docker
+.dockerignore

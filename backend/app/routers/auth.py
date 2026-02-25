@@ -1,18 +1,16 @@
-import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-logger = logging.getLogger(__name__)
-
-from app.config import Settings, get_settings
+from app.config import Settings, get_allowed_emails, get_settings
 from app.database import get_db
 from app.models import AccountOut
 from app.services import account_manager
+from app.session import verify_session_token
 
 router = APIRouter()
 
@@ -24,23 +22,37 @@ SCOPES = "user-read-playback-state user-modify-playback-state user-read-currentl
 
 
 @router.get("/login")
-async def login(settings: Settings = Depends(get_settings)):
+async def login(request: Request, settings: Settings = Depends(get_settings)):
+    # Pass session token via OAuth state so the callback can verify auth
+    # even when cookie hostname differs (e.g. localhost vs 127.0.0.1)
+    session_token = request.cookies.get("session", "")
     params = {
         "client_id": settings.spotify_client_id,
         "response_type": "code",
         "redirect_uri": settings.spotify_redirect_uri,
         "scope": SCOPES,
         "show_dialog": "true",  # Always show login so user can pick a different account
+        "state": session_token,
     }
     return RedirectResponse(f"{SPOTIFY_AUTH_URL}?{urlencode(params)}")
 
 
 @router.get("/callback")
 async def callback(
+    request: Request,
     code: str = Query(...),
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
+    # Verify Google session before linking a Spotify account.
+    # Try cookie first, fall back to OAuth state param (handles localhost/127.0.0.1 mismatch)
+    session_token = request.cookies.get("session") or request.query_params.get("state", "")
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    email = verify_session_token(session_token, settings.session_secret)
+    if not email or email.lower() not in get_allowed_emails():
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     # Exchange code for tokens
     async with httpx.AsyncClient() as client:
         token_resp = await client.post(
@@ -74,18 +86,14 @@ async def callback(
             )
         profile = profile_resp.json()
 
-    try:
-        await account_manager.upsert_account(
-            db,
-            spotify_user_id=profile["id"],
-            display_name=profile.get("display_name") or profile["id"],
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_expires_at=token_expires_at,
-        )
-    except Exception:
-        logger.exception("Failed to save account for spotify user %s", profile["id"])
-        raise
+    await account_manager.upsert_account(
+        db,
+        spotify_user_id=profile["id"],
+        display_name=profile.get("display_name") or profile["id"],
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_expires_at=token_expires_at,
+    )
 
     # Redirect back to the frontend dashboard
     return RedirectResponse(settings.frontend_url)

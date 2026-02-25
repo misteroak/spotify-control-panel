@@ -58,7 +58,15 @@ echo -n "your-client-id" | gcloud secrets create spotify-client-id --data-file=-
 echo -n "your-client-secret" | gcloud secrets create spotify-client-secret --data-file=-
 ```
 
-If the secrets already exist and you need to update them:
+## 5. Store Google OAuth credentials in Secret Manager
+
+```bash
+echo -n "your-google-client-id" | gcloud secrets create google-client-id --data-file=-
+echo -n "your-google-client-secret" | gcloud secrets create google-client-secret --data-file=-
+echo -n "$(openssl rand -base64 32)" | gcloud secrets create session-secret --data-file=-
+```
+
+If any secrets already exist and you need to update them:
 
 ```bash
 echo -n "new-value" | gcloud secrets versions add spotify-client-id --data-file=-
@@ -71,7 +79,7 @@ echo -n "postgresql+asyncpg://postgres:${DB_PASSWORD}@/spotify_panel?host=/cloud
   | gcloud secrets versions add database-url --data-file=-
 ```
 
-## 5. Grant Secret Manager access to Cloud Run
+## 6. Grant Secret Manager access to Cloud Run
 
 The default Compute Engine service account used by Cloud Run needs permission to read your secrets:
 
@@ -83,7 +91,17 @@ gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
   --role="roles/secretmanager.secretAccessor"
 ```
 
-## 6. Deploy to Cloud Run
+## 7. Configure allowed emails
+
+Before deploying, copy the example file and add the Google email addresses that should be able to log in:
+
+```bash
+cp allowed_emails.txt.example allowed_emails.txt
+```
+
+Edit `allowed_emails.txt` with your email(s), one per line. This file is gitignored but gets baked into the Docker image at build time.
+
+## 8. Deploy to Cloud Run
 
 ```bash
 PROJECT=$(gcloud config get-value project)
@@ -93,17 +111,19 @@ gcloud run deploy spotify-panel \
   --region us-east1 \
   --allow-unauthenticated \
   --add-cloudsql-instances=${PROJECT}:us-east1:spotify-panel-db \
-  --set-secrets="SPOTIFY_CLIENT_ID=spotify-client-id:latest,SPOTIFY_CLIENT_SECRET=spotify-client-secret:latest,DATABASE_URL=database-url:latest"
+  --set-secrets="SPOTIFY_CLIENT_ID=spotify-client-id:latest,SPOTIFY_CLIENT_SECRET=spotify-client-secret:latest,DATABASE_URL=database-url:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,SESSION_SECRET=session-secret:latest"
 ```
 
 On the first deploy, you'll be prompted to create an Artifact Registry repository (`cloud-run-source-deploy`) to store built container images — confirm with **yes**. Cloud Build will then build the image from the Dockerfile and deploy it. This takes a few minutes on the first run.
 
-## 7. Configure the service URL
+## 9. Configure the service URL
 
-Once deployed, Cloud Run will give you a service URL. Grab it into a variable:
+Once deployed, grab the service URL. The new Cloud Run URL format is deterministic:
 
 ```bash
-SERVICE_URL=$(gcloud run services describe spotify-panel --region us-east1 --format="value(status.url)")
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)")
+
+SERVICE_URL="https://spotify-panel-${PROJECT_NUMBER}.us-east1.run.app"
 ```
 
 Set the redirect and frontend URL env vars so the backend knows its own public address:
@@ -111,11 +131,17 @@ Set the redirect and frontend URL env vars so the backend knows its own public a
 ```bash
 gcloud run services update spotify-panel \
   --region us-east1 \
-  --update-env-vars="SPOTIFY_REDIRECT_URI=${SERVICE_URL}/auth/callback,FRONTEND_URL=${SERVICE_URL}"
+  --update-env-vars="SPOTIFY_REDIRECT_URI=${SERVICE_URL}/auth/callback,FRONTEND_URL=${SERVICE_URL},GOOGLE_REDIRECT_URI=${SERVICE_URL}/google/callback"
 ```
 
-Then go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), open your app's settings, and add the same redirect URI. Print it so you can copy-paste it:
+Then register the redirect URIs in the respective dashboards:
+
+1. **Spotify**: Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), open your app's settings, and add the Spotify redirect URI.
+2. **Google**: Go to [Google Cloud Console > Credentials](https://console.cloud.google.com/apis/credentials), open your OAuth 2.0 client, and add the Google redirect URI.
+
+Print both so you can copy-paste them:
 
 ```bash
-echo "${SERVICE_URL}/auth/callback"
+echo "Spotify: ${SERVICE_URL}/auth/callback"
+echo "Google:  ${SERVICE_URL}/google/callback"
 ```

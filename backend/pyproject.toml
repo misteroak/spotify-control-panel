@@ -16,7 +16,10 @@ dependencies = [
     "alembic==1.14.1",
     "pydantic-settings==2.7.1",
     "python-dotenv==1.0.1",
+    "PyJWT==2.10.1",
+    "google-auth==2.38.0",
+    "requests>=2.32.0",
 ]
 
 [tool.setuptools]
-packages = ["app", "app.routers", "app.services"]
+packages = ["app", "app.routers", "app.services", "app.middleware"]

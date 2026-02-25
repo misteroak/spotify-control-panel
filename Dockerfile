@@ -9,9 +9,9 @@ RUN npm run build
 # Stage 2: Python backend + static files
 FROM python:3.12-slim
 WORKDIR /app
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
+COPY allowed_emails.txt .
+RUN pip install --no-cache-dir .
 COPY --from=frontend /app/frontend/dist ./static
 
 # Cloud Run sets PORT env var (default 8080)

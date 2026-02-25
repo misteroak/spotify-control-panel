@@ -72,58 +72,36 @@ async def get_playback_state(db: AsyncSession, account: Account) -> PlaybackStat
     )
 
 
-async def play(db: AsyncSession, account: Account) -> None:
+async def _spotify_command(
+    db: AsyncSession, account: Account, method: str, path: str, **kwargs: object
+) -> None:
+    """Send a command to the Spotify API. 204/202/403 are treated as success."""
     token = await _ensure_token(db, account)
     async with httpx.AsyncClient() as client:
-        resp = await client.put(f"{SPOTIFY_API}/play", headers=_headers(token))
-        # 403 means no active device — not an error we can fix
+        resp = await client.request(method, f"{SPOTIFY_API}{path}", headers=_headers(token), **kwargs)
         if resp.status_code not in (204, 202, 403):
             resp.raise_for_status()
+
+
+async def play(db: AsyncSession, account: Account) -> None:
+    await _spotify_command(db, account, "PUT", "/play")
 
 
 async def pause(db: AsyncSession, account: Account) -> None:
-    token = await _ensure_token(db, account)
-    async with httpx.AsyncClient() as client:
-        resp = await client.put(f"{SPOTIFY_API}/pause", headers=_headers(token))
-        if resp.status_code not in (204, 202, 403):
-            resp.raise_for_status()
+    await _spotify_command(db, account, "PUT", "/pause")
 
 
 async def set_volume(db: AsyncSession, account: Account, volume_percent: int) -> None:
-    token = await _ensure_token(db, account)
-    async with httpx.AsyncClient() as client:
-        resp = await client.put(
-            f"{SPOTIFY_API}/volume",
-            params={"volume_percent": max(0, min(100, volume_percent))},
-            headers=_headers(token),
-        )
-        if resp.status_code not in (204, 202, 403):
-            resp.raise_for_status()
+    await _spotify_command(db, account, "PUT", "/volume", params={"volume_percent": volume_percent})
 
 
 async def seek(db: AsyncSession, account: Account, position_ms: int) -> None:
-    token = await _ensure_token(db, account)
-    async with httpx.AsyncClient() as client:
-        resp = await client.put(
-            f"{SPOTIFY_API}/seek",
-            params={"position_ms": max(0, position_ms)},
-            headers=_headers(token),
-        )
-        if resp.status_code not in (204, 202, 403):
-            resp.raise_for_status()
+    await _spotify_command(db, account, "PUT", "/seek", params={"position_ms": position_ms})
 
 
 async def next_track(db: AsyncSession, account: Account) -> None:
-    token = await _ensure_token(db, account)
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(f"{SPOTIFY_API}/next", headers=_headers(token))
-        if resp.status_code not in (204, 202, 403):
-            resp.raise_for_status()
+    await _spotify_command(db, account, "POST", "/next")
 
 
 async def previous_track(db: AsyncSession, account: Account) -> None:
-    token = await _ensure_token(db, account)
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(f"{SPOTIFY_API}/previous", headers=_headers(token))
-        if resp.status_code not in (204, 202, 403):
-            resp.raise_for_status()
+    await _spotify_command(db, account, "POST", "/previous")

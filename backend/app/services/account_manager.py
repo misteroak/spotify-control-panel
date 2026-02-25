@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +8,7 @@ from app.models import Account
 
 async def get_all_accounts(db: AsyncSession) -> list[Account]:
     result = await db.execute(select(Account))
-    return list(result.scalars().all())
+    return result.scalars().all()
 
 
 async def get_account(db: AsyncSession, account_id: int) -> Account | None:
