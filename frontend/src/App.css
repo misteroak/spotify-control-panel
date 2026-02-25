@@ -41,6 +41,20 @@ body {
   border-radius: 12px;
   padding: 1.5rem;
   border: 1px solid #333;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+.account-card.selected {
+  border-color: #1db954;
+  border-width: 2px;
+}
+
+.account-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
 }
 
 .account-header {
@@ -52,6 +66,9 @@ body {
 
 .account-header h3 {
   color: #1db954;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .remove-btn {

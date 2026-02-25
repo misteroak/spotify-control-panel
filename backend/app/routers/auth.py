@@ -104,6 +104,15 @@ async def list_accounts(db: AsyncSession = Depends(get_db)):
     return await account_manager.get_all_accounts(db)
 
 
+@router.put("/accounts/reorder")
+async def reorder_accounts(
+    ordered_ids: list[int],
+    db: AsyncSession = Depends(get_db),
+):
+    await account_manager.reorder_accounts(db, ordered_ids)
+    return {"ok": True}
+
+
 @router.delete("/accounts/{account_id}")
 async def remove_account(account_id: int, db: AsyncSession = Depends(get_db)):
     deleted = await account_manager.delete_account(db, account_id)

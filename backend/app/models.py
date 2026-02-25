@@ -19,6 +19,7 @@ class Account(Base):
     access_token: Mapped[str] = mapped_column(String)
     refresh_token: Mapped[str] = mapped_column(String)
     token_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 # ── Pydantic schemas ──
@@ -28,6 +29,7 @@ class AccountOut(BaseModel):
     id: int
     spotify_user_id: str
     display_name: str
+    sort_order: int = 0
 
     model_config = {"from_attributes": True}
 

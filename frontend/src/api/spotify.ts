@@ -51,6 +51,14 @@ export async function deleteAccount(accountId: number): Promise<void> {
   await api(`/auth/accounts/${accountId}`, { method: "DELETE" });
 }
 
+export async function reorderAccounts(orderedIds: number[]): Promise<void> {
+  await api("/auth/accounts/reorder", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(orderedIds),
+  });
+}
+
 export async function getPlaybackState(
   accountId: number
 ): Promise<PlaybackState> {

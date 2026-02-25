@@ -7,8 +7,16 @@ from app.models import Account
 
 
 async def get_all_accounts(db: AsyncSession) -> list[Account]:
-    result = await db.execute(select(Account))
+    result = await db.execute(select(Account).order_by(Account.sort_order))
     return result.scalars().all()
+
+
+async def reorder_accounts(db: AsyncSession, ordered_ids: list[int]) -> None:
+    for position, account_id in enumerate(ordered_ids):
+        account = await db.get(Account, account_id)
+        if account:
+            account.sort_order = position
+    await db.commit()
 
 
 async def get_account(db: AsyncSession, account_id: int) -> Account | None:
