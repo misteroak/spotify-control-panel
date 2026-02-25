@@ -29,12 +29,14 @@ body {
 }
 
 .accounts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4rem;
 }
 
 .account-card {
+  flex: 1 1 340px;
   background: #1e1e1e;
   border-radius: 12px;
   padding: 1.5rem;
