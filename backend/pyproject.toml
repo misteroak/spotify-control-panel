@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spotify-control-panel"
+version = "0.1.0"
+description = "Multi-account Spotify control panel backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "httpx==0.28.1",
+    "sqlalchemy[asyncio]==2.0.36",
+    "asyncpg==0.30.0",
+    "alembic==1.14.1",
+    "pydantic-settings==2.7.1",
+    "python-dotenv==1.0.1",
+]
+
+[tool.setuptools]
+packages = ["app", "app.routers", "app.services"]

@@ -1,0 +1,71 @@
+export interface Account {
+  id: number;
+  spotify_user_id: string;
+  display_name: string;
+}
+
+export interface PlaybackState {
+  is_playing: boolean;
+  track_name: string | null;
+  artist_name: string | null;
+  album_name: string | null;
+  album_image_url: string | null;
+  progress_ms: number;
+  duration_ms: number;
+  volume_percent: number | null;
+  device_name: string | null;
+}
+
+const BASE = "";
+
+async function api<T>(path: string, options?: RequestInit): Promise<T> {
+  const resp = await fetch(`${BASE}${path}`, options);
+  if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+  return resp.json();
+}
+
+export async function getAccounts(): Promise<Account[]> {
+  return api("/auth/accounts");
+}
+
+export async function deleteAccount(accountId: number): Promise<void> {
+  await api(`/auth/accounts/${accountId}`, { method: "DELETE" });
+}
+
+export async function getPlaybackState(
+  accountId: number
+): Promise<PlaybackState> {
+  return api(`/playback/${accountId}/state`);
+}
+
+export async function play(accountId: number): Promise<void> {
+  await api(`/playback/${accountId}/play`, { method: "PUT" });
+}
+
+export async function pause(accountId: number): Promise<void> {
+  await api(`/playback/${accountId}/pause`, { method: "PUT" });
+}
+
+export async function setVolume(
+  accountId: number,
+  level: number
+): Promise<void> {
+  await api(`/playback/${accountId}/volume?level=${level}`, { method: "PUT" });
+}
+
+export async function seek(
+  accountId: number,
+  positionMs: number
+): Promise<void> {
+  await api(`/playback/${accountId}/seek?position_ms=${positionMs}`, {
+    method: "PUT",
+  });
+}
+
+export async function nextTrack(accountId: number): Promise<void> {
+  await api(`/playback/${accountId}/next`, { method: "POST" });
+}
+
+export async function previousTrack(accountId: number): Promise<void> {
+  await api(`/playback/${accountId}/previous`, { method: "POST" });
+}
