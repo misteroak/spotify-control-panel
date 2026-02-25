@@ -82,6 +82,6 @@ Each account shows the current track, album art, and has independent play/pause/
 
 > **Note:** Spotify requires an active playback device (desktop app, mobile app, or web player) for the controls to work.
 
-## Deployment (Cloud Run)
+## Deployment
 
-See [CLAUDE.md](CLAUDE.md) for Cloud Run deployment commands.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions on deploying to Google Cloud Run.
