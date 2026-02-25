@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
@@ -5,6 +6,8 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.config import Settings, get_settings
 from app.database import get_db
@@ -71,14 +74,18 @@ async def callback(
             )
         profile = profile_resp.json()
 
-    await account_manager.upsert_account(
-        db,
-        spotify_user_id=profile["id"],
-        display_name=profile.get("display_name") or profile["id"],
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_expires_at=token_expires_at,
-    )
+    try:
+        await account_manager.upsert_account(
+            db,
+            spotify_user_id=profile["id"],
+            display_name=profile.get("display_name") or profile["id"],
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_expires_at=token_expires_at,
+        )
+    except Exception:
+        logger.exception("Failed to save account for spotify user %s", profile["id"])
+        raise
 
     # Redirect back to the frontend dashboard
     return RedirectResponse(settings.frontend_url)

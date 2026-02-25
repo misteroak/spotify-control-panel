@@ -16,4 +16,4 @@ COPY --from=frontend /app/frontend/dist ./static
 
 # Cloud Run sets PORT env var (default 8080)
 ENV PORT=8080
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
+CMD python -m alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT

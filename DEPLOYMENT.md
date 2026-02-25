@@ -43,15 +43,12 @@ gcloud sql users set-password postgres \
   --instance=spotify-panel-db \
   --password="$DB_PASSWORD"
 
+# Grab the connection name (e.g. my-project:us-east1:spotify-panel-db)
+CONNECTION_NAME=$(gcloud sql instances describe spotify-panel-db --format="value(connectionName)")
+
 # Store the full connection string in Secret Manager (while $DB_PASSWORD is still in memory)
-echo -n "postgresql+asyncpg://postgres:${DB_PASSWORD}@/spotify_panel?host=/cloudsql/PROJECT:us-east1:spotify-panel-db" \
+echo -n "postgresql+asyncpg://postgres:${DB_PASSWORD}@/spotify_panel?host=/cloudsql/${CONNECTION_NAME}" \
   | gcloud secrets create database-url --data-file=-
-```
-
-Note the **connection name** for later — it looks like `PROJECT:us-east1:spotify-panel-db`. You can find it with:
-
-```bash
-gcloud sql instances describe spotify-panel-db --format="value(connectionName)"
 ```
 
 ## 4. Store Spotify credentials in Secret Manager
@@ -66,45 +63,59 @@ If the secrets already exist and you need to update them:
 ```bash
 echo -n "new-value" | gcloud secrets versions add spotify-client-id --data-file=-
 echo -n "new-value" | gcloud secrets versions add spotify-client-secret --data-file=-
-echo -n "new-value" | gcloud secrets versions add database-url --data-file=-
+
+# For database-url, rebuild the connection string with the correct connection name
+CONNECTION_NAME=$(gcloud sql instances describe spotify-panel-db --format="value(connectionName)")
+
+echo -n "postgresql+asyncpg://postgres:${DB_PASSWORD}@/spotify_panel?host=/cloudsql/${CONNECTION_NAME}" \
+  | gcloud secrets versions add database-url --data-file=-
 ```
 
-## 5. Deploy to Cloud Run
+## 5. Grant Secret Manager access to Cloud Run
 
-Replace `PROJECT:us-east1:spotify-panel-db` with your connection name from step 3:
+The default Compute Engine service account used by Cloud Run needs permission to read your secrets:
 
 ```bash
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)")
+
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+## 6. Deploy to Cloud Run
+
+```bash
+PROJECT=$(gcloud config get-value project)
+
 gcloud run deploy spotify-panel \
   --source . \
   --region us-east1 \
   --allow-unauthenticated \
-  --add-cloudsql-instances=PROJECT:us-east1:spotify-panel-db \
+  --add-cloudsql-instances=${PROJECT}:us-east1:spotify-panel-db \
   --set-secrets="SPOTIFY_CLIENT_ID=spotify-client-id:latest,SPOTIFY_CLIENT_SECRET=spotify-client-secret:latest,DATABASE_URL=database-url:latest"
 ```
 
-Cloud Build will build the container image from the Dockerfile and deploy it. This takes a few minutes on the first run.
+On the first deploy, you'll be prompted to create an Artifact Registry repository (`cloud-run-source-deploy`) to store built container images — confirm with **yes**. Cloud Build will then build the image from the Dockerfile and deploy it. This takes a few minutes on the first run.
 
-## 6. Update the Spotify redirect URI
+## 7. Configure the service URL
 
-Once deployed, Cloud Run will give you a service URL (e.g. `https://spotify-panel-xxxxx-uc.a.run.app`).
-
-Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), open your app's settings, and add a redirect URI:
-
-```
-https://YOUR_SERVICE_URL/auth/callback
-```
-
-## 7. Run database migrations
-
-The migrations need to run against your Cloud SQL instance. The simplest way is via [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy):
+Once deployed, Cloud Run will give you a service URL. Grab it into a variable:
 
 ```bash
-# In one terminal, start the proxy:
-cloud-sql-proxy PROJECT:us-east1:spotify-panel-db
+SERVICE_URL=$(gcloud run services describe spotify-panel --region us-east1 --format="value(status.url)")
+```
 
-# In another terminal, fetch the password and run migrations:
-cd backend
-DB_PASSWORD=$(gcloud secrets versions access latest --secret=database-url | sed 's|.*://postgres:\(.*\)@.*|\1|')
-DATABASE_URL="postgresql+asyncpg://postgres:${DB_PASSWORD}@localhost:5432/spotify_panel" \
-  uv run alembic upgrade head
+Set the redirect and frontend URL env vars so the backend knows its own public address:
+
+```bash
+gcloud run services update spotify-panel \
+  --region us-east1 \
+  --update-env-vars="SPOTIFY_REDIRECT_URI=${SERVICE_URL}/auth/callback,FRONTEND_URL=${SERVICE_URL}"
+```
+
+Then go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), open your app's settings, and add the same redirect URI. Print it so you can copy-paste it:
+
+```bash
+echo "${SERVICE_URL}/auth/callback"
 ```
