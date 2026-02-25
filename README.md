@@ -1,6 +1,8 @@
 # Spotify Multi-Account Control Panel
 
-Control playback on up to 5 Spotify accounts simultaneously from a single dashboard.
+I got tired of walking to each of my kids' iPads every night to turn off the podcasts they'd fallen asleep to. So I built this — a single dashboard where I can see and control playback across multiple Spotify accounts at once. One screen, a few taps, everyone's audio is off, and I can go back to the couch.
+
+It supports up to 5 Spotify accounts, each with independent play/pause, skip, volume, and seek controls.
 
 ## Prerequisites
 
