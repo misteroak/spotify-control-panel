@@ -62,14 +62,20 @@ uv run alembic upgrade head                                # apply migrations
 Single-container deployment via multi-stage Dockerfile. Frontend is built and served as static files by FastAPI.
 
 ```bash
+# Set these for your environment
+SERVICE_URL="spotify-panel-393546321908.us-east1.run.app"
+CLOUDSQL_INSTANCE="PROJECT:REGION:INSTANCE"
+
 gcloud run deploy spotify-panel \
   --source . \
-  --region us-central1 \
+  --region us-east1 \
   --allow-unauthenticated \
-  --add-cloudsql-instances=PROJECT:REGION:INSTANCE \
-  --set-secrets="SPOTIFY_CLIENT_ID=spotify-client-id:latest,SPOTIFY_CLIENT_SECRET=spotify-client-secret:latest" \
-  --set-env-vars="DATABASE_URL=postgresql+asyncpg://user:pass@/dbname?host=/cloudsql/PROJECT:REGION:INSTANCE"
+  --add-cloudsql-instances="$CLOUDSQL_INSTANCE" \
+  --set-secrets="SPOTIFY_CLIENT_ID=spotify-client-id:latest,SPOTIFY_CLIENT_SECRET=spotify-client-secret:latest,DATABASE_URL=database-url:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,SESSION_SECRET=session-secret:latest" \
+  --set-env-vars="SPOTIFY_REDIRECT_URI=https://${SERVICE_URL}/auth/callback,GOOGLE_REDIRECT_URI=https://${SERVICE_URL}/google/callback,FRONTEND_URL=https://${SERVICE_URL}"
 ```
+
+**Important**: The redirect URIs must also be registered in the Spotify Developer Dashboard and Google Cloud Console OAuth credentials.
 
 ## Spotify API Details
 
