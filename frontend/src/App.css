@@ -40,13 +40,10 @@ body {
 
 /* Bulk Actions Toolbar */
 .bulk-actions {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 4px;
   margin-bottom: 1.5rem;
 }
 

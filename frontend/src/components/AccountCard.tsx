@@ -9,14 +9,10 @@ import { PlaybackControls } from "./PlaybackControls";
 
 interface Props {
   account: Account;
-  selected: boolean;
-  onToggleSelect: (id: number) => void;
   onRemoved: () => void;
 }
 
-const INTERACTIVE = "button, input, a, [role='slider']";
-
-export function AccountCard({ account, selected, onToggleSelect, onRemoved }: Props) {
+export function AccountCard({ account, onRemoved }: Props) {
   const { state, error } = usePlaybackState(account.id);
   const {
     attributes,
@@ -38,18 +34,11 @@ export function AccountCard({ account, selected, onToggleSelect, onRemoved }: Pr
     onRemoved();
   };
 
-  const handleCardClick = (e: React.MouseEvent | React.TouchEvent) => {
-    // Don't toggle selection when tapping interactive controls
-    if ((e.target as HTMLElement).closest(INTERACTIVE)) return;
-    onToggleSelect(account.id);
-  };
-
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`account-card${selected ? " selected" : ""}${isDragging ? " dragging" : ""}`}
-      onClick={handleCardClick}
+      className={`account-card${isDragging ? " dragging" : ""}`}
       {...attributes}
       {...listeners}
     >

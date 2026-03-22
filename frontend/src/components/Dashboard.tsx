@@ -15,7 +15,7 @@ import {
   rectSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { CheckCheck, Square, Play, CircleStop } from "lucide-react";
+import { Play, CircleStop } from "lucide-react";
 import { getAccounts, reorderAccounts, logout, play, pause, type Account } from "../api/spotify";
 import { AccountCard } from "./AccountCard";
 import { AddAccount } from "./AddAccount";
@@ -24,7 +24,6 @@ const MAX_ACCOUNTS = 5;
 
 export function Dashboard({ userEmail }: { userEmail: string }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -60,31 +59,13 @@ export function Dashboard({ userEmail }: { userEmail: string }) {
     []
   );
 
-  const handleToggleSelect = useCallback((id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const handleSelectAll = useCallback(() => {
-    setSelectedIds((prev) => {
-      if (prev.size === accounts.length) return new Set();
-      return new Set(accounts.map((a) => a.id));
-    });
+  const handleStopAll = useCallback(() => {
+    accounts.forEach((a) => pause(a.id));
   }, [accounts]);
 
-  const handleStopAll = useCallback(() => {
-    selectedIds.forEach((id) => pause(id));
-  }, [selectedIds]);
-
   const handlePlayAll = useCallback(() => {
-    selectedIds.forEach((id) => play(id));
-  }, [selectedIds]);
-
-  const selectedCount = selectedIds.size;
+    accounts.forEach((a) => play(a.id));
+  }, [accounts]);
 
   return (
     <div className="dashboard">
@@ -100,29 +81,13 @@ export function Dashboard({ userEmail }: { userEmail: string }) {
       </div>
       {accounts.length > 0 && (
         <div className="bulk-actions">
-          <button className="bulk-btn bulk-select" onClick={handleSelectAll}>
-            {selectedCount === accounts.length && selectedCount > 0
-              ? <><Square size={15} /> Deselect All</>
-              : <><CheckCheck size={15} /> Select All</>}
-          </button>
-          <div className="bulk-separator" />
-          <button
-            className="bulk-btn bulk-stop"
-            disabled={selectedCount === 0}
-            onClick={handleStopAll}
-          >
+          <button className="bulk-btn bulk-stop" onClick={handleStopAll}>
             <CircleStop size={15} />
-            Stop
-            {selectedCount > 0 && <span className="bulk-badge bulk-badge-stop">{selectedCount}</span>}
+            Stop All
           </button>
-          <button
-            className="bulk-btn bulk-play"
-            disabled={selectedCount === 0}
-            onClick={handlePlayAll}
-          >
+          <button className="bulk-btn bulk-play" onClick={handlePlayAll}>
             <Play size={15} />
-            Play
-            {selectedCount > 0 && <span className="bulk-badge bulk-badge-play">{selectedCount}</span>}
+            Play All
           </button>
         </div>
       )}
@@ -140,8 +105,6 @@ export function Dashboard({ userEmail }: { userEmail: string }) {
               <AccountCard
                 key={a.id}
                 account={a}
-                selected={selectedIds.has(a.id)}
-                onToggleSelect={handleToggleSelect}
                 onRemoved={loadAccounts}
               />
             ))}

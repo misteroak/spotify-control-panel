@@ -13,6 +13,7 @@ frontend/dist/
 
 # Environment
 .env
+.env.deploy
 *.db
 
 # IDE
