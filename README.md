@@ -4,6 +4,29 @@ I got tired of walking to each of my kids' iPads every night to turn off the pod
 
 It supports up to 5 Spotify accounts, each with independent play/pause, skip, volume, and seek controls.
 
+## Quick Local Run
+
+If you've already completed the full setup below, here's all you need:
+
+```bash
+# Terminal 1 — start Postgres (if using Docker)
+docker start spotify-panel-db
+
+# Terminal 2 — backend
+cd backend
+uv run uvicorn app.main:app --reload --port 8000
+
+# Terminal 3 — frontend
+cd frontend
+npm run dev
+```
+
+Then open http://localhost:5173.
+
+---
+
+## Full Setup
+
 ## Prerequisites
 
 - Python 3.12+

@@ -15,7 +15,8 @@ import {
   rectSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { getAccounts, reorderAccounts, logout, type Account } from "../api/spotify";
+import { CheckCheck, Square, Play, CircleStop } from "lucide-react";
+import { getAccounts, reorderAccounts, logout, play, pause, type Account } from "../api/spotify";
 import { AccountCard } from "./AccountCard";
 import { AddAccount } from "./AddAccount";
 
@@ -68,6 +69,23 @@ export function Dashboard({ userEmail }: { userEmail: string }) {
     });
   }, []);
 
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === accounts.length) return new Set();
+      return new Set(accounts.map((a) => a.id));
+    });
+  }, [accounts]);
+
+  const handleStopAll = useCallback(() => {
+    selectedIds.forEach((id) => pause(id));
+  }, [selectedIds]);
+
+  const handlePlayAll = useCallback(() => {
+    selectedIds.forEach((id) => play(id));
+  }, [selectedIds]);
+
+  const selectedCount = selectedIds.size;
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -80,6 +98,34 @@ export function Dashboard({ userEmail }: { userEmail: string }) {
           </button>
         </div>
       </div>
+      {accounts.length > 0 && (
+        <div className="bulk-actions">
+          <button className="bulk-btn bulk-select" onClick={handleSelectAll}>
+            {selectedCount === accounts.length && selectedCount > 0
+              ? <><Square size={15} /> Deselect All</>
+              : <><CheckCheck size={15} /> Select All</>}
+          </button>
+          <div className="bulk-separator" />
+          <button
+            className="bulk-btn bulk-stop"
+            disabled={selectedCount === 0}
+            onClick={handleStopAll}
+          >
+            <CircleStop size={15} />
+            Stop
+            {selectedCount > 0 && <span className="bulk-badge bulk-badge-stop">{selectedCount}</span>}
+          </button>
+          <button
+            className="bulk-btn bulk-play"
+            disabled={selectedCount === 0}
+            onClick={handlePlayAll}
+          >
+            <Play size={15} />
+            Play
+            {selectedCount > 0 && <span className="bulk-badge bulk-badge-play">{selectedCount}</span>}
+          </button>
+        </div>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

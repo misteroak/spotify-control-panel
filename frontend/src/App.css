@@ -38,6 +38,101 @@ body {
   color: #1db954;
 }
 
+/* Bulk Actions Toolbar */
+.bulk-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.bulk-separator {
+  width: 1px;
+  height: 20px;
+  background: #333;
+  margin: 0 4px;
+}
+
+.bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #999;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.bulk-btn:hover:not(:disabled) {
+  background: #282828;
+  color: #fff;
+}
+
+.bulk-btn:active:not(:disabled) {
+  background: #333;
+}
+
+.bulk-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.bulk-btn.bulk-select {
+  color: #bbb;
+}
+
+.bulk-btn.bulk-stop:not(:disabled) {
+  color: #ff6b6b;
+}
+
+.bulk-btn.bulk-stop:hover:not(:disabled) {
+  background: rgba(231, 76, 60, 0.15);
+  color: #ff6b6b;
+}
+
+.bulk-btn.bulk-play:not(:disabled) {
+  color: #1db954;
+}
+
+.bulk-btn.bulk-play:hover:not(:disabled) {
+  background: rgba(29, 185, 84, 0.15);
+  color: #1ed760;
+}
+
+.bulk-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.bulk-badge-stop {
+  background: rgba(231, 76, 60, 0.2);
+  color: #ff6b6b;
+}
+
+.bulk-badge-play {
+  background: rgba(29, 185, 84, 0.2);
+  color: #1db954;
+}
+
 .accounts-grid {
   display: flex;
   flex-wrap: wrap;
