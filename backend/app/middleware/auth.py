@@ -18,7 +18,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        if path in PUBLIC_PATHS:
+        if path in PUBLIC_PATHS or path.startswith("/api/public/"):
             return await call_next(request)
 
         settings = get_settings()

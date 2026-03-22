@@ -125,6 +125,31 @@ Each account shows the current track, album art, and has independent play/pause/
 
 > **Note:** Spotify requires an active playback device (desktop app, mobile app, or web player) for the controls to work.
 
+## Public API / iOS Shortcuts
+
+The panel exposes a small API for automation tools like iOS Shortcuts. It's protected by a bearer token — only requests with the correct key are accepted.
+
+**Available endpoints:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/public/stop-all` | Pause playback on all accounts |
+
+**Setup:**
+
+1. Generate a key: `openssl rand -hex 32`
+2. Add it to `backend/.env`: `PUBLIC_API_KEY=your-key-here`
+3. Restart the backend
+
+**iOS Shortcut:**
+
+Use the "Get Contents of URL" action:
+- URL: `http://localhost:8000/api/public/stop-all` (or your production URL)
+- Method: `POST`
+- Headers: `Authorization` → `Bearer your-key-here`
+
+> If `PUBLIC_API_KEY` is not set, all requests to `/api/public/` return 401.
+
 ## Deployment
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions on deploying to Google Cloud Run.

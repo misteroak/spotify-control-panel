@@ -24,6 +24,14 @@ fi
 
 echo "Deploying ${CLOUD_RUN_SERVICE} to ${GCP_REGION} (project: ${GCP_PROJECT})"
 
+# --- Build secrets list (public-api-key is optional) ---
+SECRETS="SPOTIFY_CLIENT_ID=spotify-client-id:latest,SPOTIFY_CLIENT_SECRET=spotify-client-secret:latest,DATABASE_URL=database-url:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,SESSION_SECRET=session-secret:latest"
+
+if gcloud secrets describe public-api-key --project "$GCP_PROJECT" &>/dev/null; then
+  echo "Found public-api-key secret — enabling public API endpoints"
+  SECRETS="${SECRETS},PUBLIC_API_KEY=public-api-key:latest"
+fi
+
 # --- Deploy to Cloud Run ---
 gcloud run deploy "$CLOUD_RUN_SERVICE" \
   --project "$GCP_PROJECT" \
@@ -31,7 +39,7 @@ gcloud run deploy "$CLOUD_RUN_SERVICE" \
   --region "$GCP_REGION" \
   --allow-unauthenticated \
   --add-cloudsql-instances="${GCP_PROJECT}:${GCP_REGION}:${CLOUDSQL_INSTANCE}" \
-  --set-secrets="SPOTIFY_CLIENT_ID=spotify-client-id:latest,SPOTIFY_CLIENT_SECRET=spotify-client-secret:latest,DATABASE_URL=database-url:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,SESSION_SECRET=session-secret:latest"
+  --set-secrets="$SECRETS"
 
 # --- Set redirect/frontend env vars ---
 PROJECT_NUMBER=$(gcloud projects describe "$GCP_PROJECT" --format="value(projectNumber)")
@@ -46,3 +54,7 @@ echo ""
 echo "Deployed to: ${SERVICE_URL}"
 echo "Spotify redirect URI: ${SERVICE_URL}/auth/callback"
 echo "Google redirect URI:  ${SERVICE_URL}/google/callback"
+echo ""
+echo "To stop all playback (e.g. from iOS Shortcuts or a webhook):"
+echo "  curl -X POST ${SERVICE_URL}/api/public/stop-all \\"
+echo "       -H 'Authorization: Bearer <your-public-api-key>'"

@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.middleware.auth import AuthMiddleware
-from app.routers import auth, google_auth, playback
+from app.routers import auth, google_auth, playback, public_api
 
 app = FastAPI(title="Spotify Control Panel")
 
@@ -24,6 +24,7 @@ app.add_middleware(AuthMiddleware)
 app.include_router(google_auth.router, prefix="/google", tags=["google-auth"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(playback.router, prefix="/playback", tags=["playback"])
+app.include_router(public_api.router, prefix="/api/public", tags=["public-api"])
 
 # Serve frontend static files in production (built React app)
 static_dir = Path(__file__).parent.parent / "static"

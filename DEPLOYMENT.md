@@ -91,7 +91,30 @@ echo -n "your-google-client-secret" | gcloud secrets create google-client-secret
 echo -n "$(openssl rand -base64 32)" | gcloud secrets create session-secret --data-file=-
 ```
 
-### 6. Grant Secret Manager access to Cloud Run
+### 6. (Optional) Store the public API key
+
+Skip this if you don't need the iOS Shortcuts / automation API. If you do want it:
+
+```bash
+echo -n "$(openssl rand -hex 32)" | gcloud secrets create public-api-key --data-file=-
+```
+
+Then retrieve the value so you can copy it into your iOS Shortcut:
+
+```bash
+gcloud secrets versions access latest --secret=public-api-key
+```
+
+Save it somewhere safe. The deploy script automatically includes this secret if it exists.
+
+To rotate the key, push a new secret version and redeploy — Cloud Run pins the secret value at deploy time, so a redeploy is required for the new value to take effect:
+
+```bash
+echo -n "$(openssl rand -hex 32)" | gcloud secrets versions add public-api-key --data-file=-
+./deploy.sh
+```
+
+### 7. Grant Secret Manager access to Cloud Run
 
 The default Compute Engine service account used by Cloud Run needs permission to read your secrets:
 
@@ -103,7 +126,7 @@ gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
   --role="roles/secretmanager.secretAccessor"
 ```
 
-### 7. Configure allowed emails
+### 8. Configure allowed emails
 
 Copy the example file and add the Google email addresses that should be able to log in:
 
@@ -113,7 +136,7 @@ cp allowed_emails.txt.example allowed_emails.txt
 
 Edit `allowed_emails.txt` with your email(s), one per line. This file is gitignored but gets baked into the Docker image at build time.
 
-### 8. Create the deploy config
+### 9. Create the deploy config
 
 ```bash
 cp .env.deploy.example .env.deploy
@@ -121,7 +144,7 @@ cp .env.deploy.example .env.deploy
 
 Edit `.env.deploy` with your GCP project ID. The other defaults match the values used above.
 
-### 9. Deploy
+### 10. Deploy
 
 Run the deploy script:
 
@@ -131,7 +154,7 @@ Run the deploy script:
 
 On the first deploy, you'll be prompted to create an Artifact Registry repository (`cloud-run-source-deploy`) to store built container images — confirm with **yes**. Cloud Build will then build the image from the Dockerfile and deploy it. This takes a few minutes on the first run.
 
-### 10. Register redirect URIs
+### 11. Register redirect URIs
 
 After the first deploy, the script prints the redirect URIs. Register them in the respective dashboards:
 

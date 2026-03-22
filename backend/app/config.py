@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     google_redirect_uri: str = "http://localhost:8000/google/callback"
     session_secret: str  # Required — generate with: openssl rand -base64 32
 
+    # Public API key for iOS Shortcuts / automation (optional — omit to disable public endpoints)
+    public_api_key: str | None = None
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
